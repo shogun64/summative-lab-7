@@ -24,10 +24,6 @@ class User(Person):
         type(self)._ID_COUNTER += 1
         self.id = type(self)._ID_COUNTER
         self.projects = []
-
-    @property
-    def projects(self) -> List["Project"]:
-        return [p for p in Project.all() if p.user_id == self.id]
     
     def create_project(self, title: str, description: str, due_date: str) -> "Project":
         return Project.create(user_id=self.id, title=title, description=description, due_date=due_date)
@@ -36,7 +32,7 @@ class User(Person):
         self.projects.append(project)
 
     def __str__(self):
-        return f"ID: {self.id}, Name: {self.name} Email: {self.email}"
+        return f"ID: {self.id}, Name: {self.name}, Email: {self.email}"
 
 class Project:
     _ID_COUNTER = 0
@@ -59,10 +55,6 @@ class Project:
     def due_date(self, value: str):
         dt = datetime.strptime(value.strip(), "%Y-%m-%d")
         self._due_date = dt.date().isoformat()
-
-    @property
-    def tasks(self) -> List["Task"]:
-        return [t for t in Task.all() if t.project_id == self.id]
     
     def create_task(self, title: str, status: str, assigned_to: int) -> "Task":
         return Task.create(project_id=self.id, title=title, status=status, assigned_to=assigned_to)
@@ -86,12 +78,15 @@ class Project:
         return f"ID: {self.id}, Title: {self.title} Due: {self.due_date}"
 
 class Task:
+    _ID_COUNTER = 0
     _TASKS: dict[int, "Task"] = {}
     def __init__(self, project_id: int, title: str, status: str, assigned_to: int):
         self.project_id = int(project_id)
         self.title = title.strip()
         self.status = status
         self.assigned_to = assigned_to
+        type(self)._ID_COUNTER += 1
+        self.id = type(self)._ID_COUNTER
         type(self)._TASKS[self.id] = self
 
     @property
@@ -101,9 +96,12 @@ class Task:
     @status.setter
     def status(self, value: str):
         v = value.strip()
-        if v is not "Incomplete" and v is not "Complete":
+        if v != "Incomplete" and v != "Complete":
             raise ValueError("Invalid status")
         self._status = v
+
+    def mark_complete(self):
+        self.status = "Complete"
 
     @classmethod
     def create(cls, project_id: int, title: str, status: str, assigned_to: int):
